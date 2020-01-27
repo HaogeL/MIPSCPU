@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+//`timescale 1ns/1ps
 `include "define.sv"
 module tb_top();
 localparam CLK_PERIOD = 10;
@@ -18,9 +18,9 @@ logic[`INSTADDRBUS] addr;
 logic[`INSTBUS]     inst;
 
 inst_rom 
-#(
-  .NUM_OF_INST_IN_ROM (7)//fill it with the number of instructions
-)
+//#(
+//  .NUM_OF_INST_IN_ROM (4)//fill it with the number of instructions
+//)
 inst_rom_i0
 (
   .re  (re  ),
