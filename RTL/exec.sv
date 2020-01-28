@@ -187,6 +187,7 @@ module ex(
         tmp_32 = 'b0;
       end
       `EXE_CLO_OP: begin
+        tmp_32 = 'b0;
         for(int unsigned i=0; i<`REGWIDTH; i=i+1) begin
           if(reg1_i[31-i]==1'b1)
             tmp_32 = tmp_32+1;
@@ -196,6 +197,7 @@ module ex(
         arithmeticout = tmp_32;
       end
       `EXE_CLZ_OP: begin
+        tmp_32 = 'b0;
         for(int unsigned i=0; i<`REGWIDTH; i=i+1) begin
           if(reg1_i[31-i]==1'b0)
             tmp_32 = tmp_32+1;
@@ -442,80 +444,86 @@ module exec (
   input  logic[`REGBUS]     i_hi       ,
   input  logic[`REGBUS]     i_lo       ,
   //#mem feedback to exe_unit
-  input  logic              i_self_whi  ,
-  input  logic              i_self_wlo  ,
-  input  logic[`REGBUS]     i_self_hi   ,
-  input  logic[`REGBUS]     i_self_lo   ,
+  input  logic              i_mem_whi  ,
+  input  logic              i_mem_wlo  ,
+  input  logic[`REGBUS]     i_mem_hi   ,
+  input  logic[`REGBUS]     i_mem_lo   ,
   //#wb feedback to exe_unit
-  input  logic              i_mem_whi   ,
-  input  logic              i_mem_wlo   ,
-  input  logic[`REGBUS]     i_mem_hi    ,
-  input  logic[`REGBUS]     i_mem_lo    ,
+  input  logic              i_wb_whi   ,
+  input  logic              i_wb_wlo   ,
+  input  logic[`REGBUS]     i_wb_hi    ,
+  input  logic[`REGBUS]     i_wb_lo    ,
   //#write hilo_reg
   output logic              o_whi      ,
   output logic              o_wlo      ,
   output logic[`REGBUS]     o_hi       ,
   output logic[`REGBUS]     o_lo       ,
   
+  //#write gprfile
   output logic[`REGADDRBUS] o_waddr    ,
   output logic              o_we       ,
   output logic[`REGBUS]     o_wdata    ,
-  output logic              o_stall
+
+  //#back-ward the write-gpr to decoder
+  //##o_backward_wadd, o_backward_we, o_backward_wdata 
+  //##are delayed signals of o_waddr, o_we, o_wdata
+  output logic[`REGADDRBUS] o_backward_waddr    ,
+  output logic              o_backward_we       ,
+  output logic[`REGBUS]     o_backward_wdata    ,
+
+  output logic              o_stall 
 );
   logic              tmp_whi      ;
   logic              tmp_wlo      ;
   logic[`REGBUS]     tmp_hi       ;
   logic[`REGBUS]     tmp_lo       ;
   
-  logic[`REGADDRBUS] tmp_wd       ;
-  logic              tmp_wreg     ;
-  logic[`REGBUS]     tmp_wdata    ;
   ex ex_i0(
-  .clk        (clk          ),
-  .rst        (rst          ),
-  .aluop_i    (i_aluop      ),
-  .alusel_i   (i_alusel     ),
-  .reg1_i     (i_reg1       ),
-  .reg2_i     (i_reg2       ),
-  .wd_i       (i_waddr      ),
-  .wreg_i     (i_we         ),
-  .hi_i       (i_hi         ),
-  .lo_i       (i_lo         ),
-  .mem_whi_i  (i_self_whi    ),
-  .mem_wlo_i  (i_self_wlo    ),
-  .mem_hi_i   (i_self_hi     ),
-  .mem_lo_i   (i_self_lo     ),
-  .wb_whi_i   (i_mem_whi     ),
-  .wb_wlo_i   (i_mem_wlo     ),
-  .wb_hi_i    (i_mem_hi      ),
-  .wb_lo_i    (i_mem_lo      ),
-  .whi_o      (tmp_whi      ),
-  .wlo_o      (tmp_wlo      ),
-  .hi_o       (tmp_hi       ),
-  .lo_o       (tmp_lo       ),
-  .wd_o       (tmp_wd       ),
-  .wreg_o     (tmp_wreg     ),
-  .wdata_o    (tmp_wdata    ),
-  .stallreg_ex(o_stall      )
+  .clk        (clk             ),
+  .rst        (rst             ),
+  .aluop_i    (i_aluop         ),
+  .alusel_i   (i_alusel        ),
+  .reg1_i     (i_reg1          ),
+  .reg2_i     (i_reg2          ),
+  .wd_i       (i_waddr         ),
+  .wreg_i     (i_we            ),
+  .hi_i       (i_hi            ),
+  .lo_i       (i_lo            ),
+  .mem_whi_i  (i_mem_whi      ),
+  .mem_wlo_i  (i_mem_wlo      ),
+  .mem_hi_i   (i_mem_hi       ),
+  .mem_lo_i   (i_mem_lo       ),
+  .wb_whi_i   (i_wb_whi       ),
+  .wb_wlo_i   (i_wb_wlo       ),
+  .wb_hi_i    (i_wb_hi        ),
+  .wb_lo_i    (i_wb_lo        ),
+  .whi_o      (tmp_whi         ),
+  .wlo_o      (tmp_wlo         ),
+  .hi_o       (tmp_hi          ),
+  .lo_o       (tmp_lo          ),
+  .wd_o       (o_backward_waddr),
+  .wreg_o     (o_backward_we   ),
+  .wdata_o    (o_backward_wdata),
+  .stallreg_ex(o_stall         )
   );
   
   ex_mem ex_mem_i0(
-    .clk      (clk       ),  
-    .rst      (rst       ),
-    .ex_wd    (tmp_wd    ),
-    .ex_wreg  (tmp_wreg  ),
-    .ex_wdata (tmp_wdata ),
-    .ex_whi_i (tmp_whi   ),
-    .ex_wlo_i (tmp_wlo   ),
-    .ex_hi_i  (tmp_hi    ),
-    .ex_lo_i  (tmp_lo    ),
-    .mem_wd   (o_waddr    ), 
-    .mem_wreg (o_we    ), 
-    .mem_wdata(o_wdata ),
-    .mem_whi  (o_whi   ),
-    .mem_wlo  (o_wlo   ),
-    .mem_hi   (o_hi    ),
-    .mem_lo   (o_lo    )
+    .clk      (clk              ),  
+    .rst      (rst              ),
+    .ex_wd    (o_backward_waddr ),
+    .ex_wreg  (o_backward_we    ),
+    .ex_wdata (o_backward_wdata ),
+    .ex_whi_i (tmp_whi          ),
+    .ex_wlo_i (tmp_wlo          ),
+    .ex_hi_i  (tmp_hi           ),
+    .ex_lo_i  (tmp_lo           ),
+    .mem_wd   (o_waddr          ), 
+    .mem_wreg (o_we             ), 
+    .mem_wdata(o_wdata          ),
+    .mem_whi  (o_whi            ),
+    .mem_wlo  (o_wlo            ),
+    .mem_hi   (o_hi             ),
+    .mem_lo   (o_lo             )
   );
 endmodule: exec
 
