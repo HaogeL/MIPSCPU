@@ -34,8 +34,8 @@ For cadence simulator, change directory into a test directory and run
 ```sh
 $ xrun(irun) -f run.f
 ```
-Test bench diagram is shown below
+Test bench diagram is shown below  
 ![image](https://github.com/HaogeL/MIPSCPU/raw/master/DOC/img/tb_topDiagram.png)
 ## Reference
-https://e.jd.com/30344807.html
+https://e.jd.com/30344807.html  
 https://www.mips.com/products/architectures/mips32-2/
